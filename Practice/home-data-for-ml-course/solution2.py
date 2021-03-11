@@ -10,10 +10,16 @@ from sklearn.compose import ColumnTransformer
 
 
 def test_score(X_train, X_valid, y_train, y_valid, est):
-    model = RandomForestRegressor(n_estimators=est, random_state=0)
-    model.fit(X_train, y_train)
-    preds = model.predict(X_valid)
-    return mean_absolute_error(y_valid, preds)
+    mae_model = Pipeline(
+        [
+            ('transformer', transformer),
+            ('model', RandomForestRegressor(n_estimators=est, random_state=1))
+        ]
+    )
+    mae_model.fit(X_train, y_train)
+    preds = mae_model.predict(X_valid)
+    print('MAE for RFR n=', est)
+    print(mean_absolute_error(y_valid, preds))
 
 
 # Pipeline Stuff
@@ -50,7 +56,10 @@ features = [
             '1stFlrSF',
             '2ndFlrSF',
             'YearRemodAdd',
-            'CentralAir'
+            'CentralAir',
+            'GarageQual',
+            'SaleCondition',
+            'Neighborhood'
             ]
 
 X = train_full[features]
@@ -80,9 +89,20 @@ X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 model = Pipeline(
     [
         ('transformer', transformer),
-        ('model', RandomForestRegressor(n_estimators=350))
+        ('model', RandomForestRegressor(n_estimators=375))
     ]
 )
+
+#  test_score(X_train, X_valid, y_train, y_valid, 200)
+#  test_score(X_train, X_valid, y_train, y_valid, 300)
+#  test_score(X_train, X_valid, y_train, y_valid, 325)
+#  test_score(X_train, X_valid, y_train, y_valid, 350)
+#  test_score(X_train, X_valid, y_train, y_valid, 375)
+#  test_score(X_train, X_valid, y_train, y_valid, 400)
+
+#  test_score(X_train, X_valid, y_train, y_valid, 1000)
+#  test_score(X_train, X_valid, y_train, y_valid, 1500)
+#  test_score(X_train, X_valid, y_train, y_valid, 2000)
 
 model.fit(X, y)
 
@@ -90,5 +110,4 @@ predictions = model.predict(X_test)
 
 output = pd.DataFrame({'Id': test_full.Id, 'SalePrice': predictions})
 
-#  output.to_csv('submission.csv', index=False)
-
+output.to_csv('./solutions/solution2.csv', index=False)
