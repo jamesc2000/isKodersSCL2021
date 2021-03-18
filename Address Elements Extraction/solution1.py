@@ -37,7 +37,7 @@ def load_data_spacy(file_path):
             cat_list['misc'] = 1
         final_train_categories.append(cat_list)
 
-    training_data = list(zip(train_texts, [{'categories': cats} for cats in final_train_categories]))
+    training_data = list(zip(train_texts, [{'cats': cats} for cats in final_train_categories]))
     return training_data, train_texts, train_cats
 
 
@@ -65,6 +65,7 @@ def train_spacy(
         iterations,
         test_texts,
         test_cats,
+        model_arch,
         dropout=0.3,
         model=None,
         init_tok2vec=None):
@@ -72,9 +73,9 @@ def train_spacy(
 
     if 'textcat' not in nlp.pipe_names:
         textcat = nlp.create_pipe(
-            'textcat', config={'threshold': 0.5}
+                'textcat', config={'exclusive_classes': True, 'architecture': model_arch}
         )
-        textcat = nlp.add_pipe('textcat')
+        nlp.add_pipe(textcat, last=True)
     else:
         textcat = nlp.get_pipe('textcat')
 
@@ -149,7 +150,7 @@ print(len(training_data))
 test_data, test_texts, test_cats = load_data_spacy('actual_valid.csv')
 print(len(test_data))
 
-nlp = train_spacy(training_data, 10, test_texts, test_cats)
+nlp = train_spacy(training_data, 10, test_texts, test_cats, 'simple_cnn')
 
 #  Independent
 #  X = addresses['raw_address']
