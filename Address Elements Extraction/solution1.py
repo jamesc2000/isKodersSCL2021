@@ -121,11 +121,13 @@ try:
     data_train = data_train.replace('/', ',')
     train_processed.write(data_train)
     data_test = test_raw.read()
-    data_test = data_test.replace('/', ',')
+    #  data_test = data_test.replace('\"', '')
     test_processed.write(data_test)
 finally:
     train_raw.close()
     train_processed.close()
+    test_raw.close()
+    test_processed.close()
 
 raw_addresses = pd.read_csv('train_proc.csv')
 poi = raw_addresses['POI']
@@ -150,29 +152,36 @@ print(len(training_data))
 test_data, test_texts, test_cats = load_data_spacy('actual_valid.csv')
 print(len(test_data))
 
-nlp = train_spacy(training_data, 10, test_texts, test_cats, 'simple_cnn')
+#  nlp = train_spacy(training_data, 10, test_texts, test_cats, 'simple_cnn')
 
-#  Independent
-#  X = addresses['raw_address']
-#  Target
-#  y = addresses['POI/street']
+nlp2 = spacy.load('simple_cnnAddressElementExtraction')
 
-#  Split data into training and validation sets for metrics
-#  X_train, y_train, X_valid, y_valid = train_test_split(
-    #  X, y
-#  )
+y = pd.read_csv('test_proc.csv')
 
-#  Create a text categorizer
-#  can categorize into either a POI or a street
-#  textcat = nlp.create_pipe(
-    #  "textcat",
-    #  config={
-        #  "exclusive_classes": True,
-        #  "architecture": "bow"})
+answers = []
+for text in range(0, 50000):
+    poi = ''
+    street = ''
+    raw_address = y['raw_address'][text]
 
-#  nlp.add_pipe(textcat)
+    phrases = raw_address.split(', ')
 
-#  textcat.add_label('POI')
-#  textcat.add_label('street')
+    for phrase in phrases:
+        phrase = phrase.strip(',')
+        phrase = phrase.strip()
+        doc2 = nlp2(phrase)
+        if doc2.cats['poi'] > doc2.cats['street']:
+            poi = poi + phrase + ' '
+        elif doc2.cats['street'] > doc2.cats['poi']:
+            street = street + phrase + ' '
 
-#  print(X_train.head())
+    poi = poi.strip()
+    street = street.strip()
+    poi = poi.strip(',')
+    street = street.strip(',')
+    answer = poi + '/' + street
+    answers.append(answer)
+
+solution = pd.DataFrame(data={'id': y['id'], 'POI/street': answers})
+solution.to_csv('solution.csv', index=None)
+
